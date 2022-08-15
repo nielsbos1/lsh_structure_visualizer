@@ -3,24 +3,22 @@ import json
 import numpy as np
 import uuid
 
-with open('parameter_config.json', 'r') as file_:
+with open('parameter_config_final.json', 'r') as file_:
     list_configuration = json.load(file_)
 
-print(list_configuration)
-
-thresholds = [x for x in {round(item['threshold'], 1) for item in list_configuration}]
+thresholds = [x for x in {round(item['threshold'], 2) for item in list_configuration}]
 num_perm = [x for x in {item['num_perm'] for item in list_configuration}]
 amplified_two_stages = [x for x in {item['amplified'] for item in list_configuration}]
+thresholds.sort()
+num_perm.sort()
+amplified_two_stages.sort()
 
 # Write tag
 with open('current_drawing_tag.txt', 'w') as file_:
     file_.write('starting_tag')
-thresholds.sort()
-num_perm.sort()
-amplified_two_stages.sort()
-print(amplified_two_stages)
 
-print(thresholds)
+
+
 global current_drawing_tag
 current_drawing_tag = None
 
@@ -33,22 +31,25 @@ dpg.create_context()
 def retrieve_parameters(list_configuration):
     try:
         threshold = float(dpg.get_value('threshold'))
+    except Exception:
+        threshold = 0.05
+    try:
         num_perm = int(dpg.get_value('num_perm'))
+    except Exception:
+        num_perm = 16
+    try:
         amplified_two_stages = dpg.get_value('amplified')
         if amplified_two_stages == 'Amplified':
             amplified_two_stages = True
         else:
             amplified_two_stages = False
     except Exception:
-        threshold = 0.4
-        num_perm = 256
-        amplified_two_stages = False
+        amplified_two_stages = True
 
     # get parameter values
-    b, r = next(x['params'] for x in list_configuration if (abs(x['threshold'] - threshold) < 0.02
+    b, r = next(x['params'] for x in list_configuration if (abs(x['threshold'] - threshold) < 0.01
                                                             and x['num_perm'] == num_perm
                                                             and (x['amplified'] is amplified_two_stages)))
-    print((b, r))
     return b, r
 
 def get_plot_data(b, r):
@@ -68,28 +69,21 @@ def update_plot():
 
 
     return x_array, y_array
-    # # create the figure and axis objects
-    # fig, ax = plt.subplots()
-    #
-    # # plot the data and customize
-    # ax.plot(x_array, y_array)
-    # ax.set_xlabel('s (Jaccard similarity)')
-    # ax.set_ylabel('Probability of being declared a candidate pair')
-    # ax.set_title(f'threshold = {self.threshold}, amplified')
-    #
-    # plt.show()
 
 b, r = retrieve_parameters(list_configuration)
 x_array, y_array = get_plot_data(b, r)
 
-with dpg.window(label="Example Window", tag='Primary Window', height=1000):
+with dpg.window(label="Parameter value selector", tag='Primary Window', height=1020):
     dpg.add_text("Change the values!")
+    with dpg.tab_bar(label='tabbar'):
+        with dpg.tab(label="Threshold", tag="Threshold tab"):
+            dpg.add_radio_button(items=thresholds, label='threshold', tag='threshold', callback=update_plot)
+        with dpg.tab(tag='num_perm_tab', label="Sketch length"):
+            dpg.add_radio_button(items=num_perm, label='num_perm', tag='num_perm',  callback=update_plot)
+        with dpg.tab(tag='amplified_tab', label="Amplified"):
+            dpg.add_radio_button(items=['Amplified', 'Not amplified'], label='amplified', tag='amplified', callback=update_plot)
 
-    dpg.add_radio_button(items=thresholds, label='threshold', tag='threshold', callback=update_plot)
-    dpg.add_radio_button(items=num_perm, label='num_perm', tag='num_perm',  callback=update_plot)
-    dpg.add_radio_button(items=['Amplified', 'Not amplified'], label='amplified', tag='amplified', callback=update_plot)
-
-    with dpg.plot(label="Line Series", height=400, width=400):
+    with dpg.plot(label="Line Series", height=550, width=550):
         # optionally create legend
         dpg.add_plot_legend()
 
@@ -116,7 +110,6 @@ def create_tree(b, r):
         file_.write(current_drawing_tag)
 
     total_lines = b[0] * b[1] * r[0] * r[1]
-    print(f'total_lines: {total_lines}')
     if total_lines <= 16:
         internal_dist = 15
         external_dist = 15
@@ -138,7 +131,7 @@ def create_tree(b, r):
         external_dist = 6
         group_dist = 15
 
-    with dpg.window(label="tree_structure", tag=current_drawing_tag, pos=(500,10)):
+    with dpg.window(label="(Amplified) LSH structure", tag=current_drawing_tag, pos=(560,0)):
         dpg.add_drawlist(width=5000, height=15000)
         start_coordinates = (10, 10)
         # Take into account second layer
@@ -146,7 +139,6 @@ def create_tree(b, r):
             for r_2 in range(r[1]):
                 for j in range(0, b[0]):
                     # draw in first layer one band of rows
-                    print(f'j: {j}')
                     for i in range(0, r[0]):
                         start_line = (start_coordinates[0], start_coordinates[1] + (i + j * r[0]) * internal_dist + j * external_dist)
                         end_line = (start_coordinates[0] + 50, start_coordinates[1] + (i + j * r[0]) * internal_dist + j * external_dist)
@@ -183,22 +175,8 @@ def create_tree(b, r):
             if b_2 == b[1] - 1:
                 end_fourth_vertical_line = end_middle_third_vertical_line
         dpg.draw_line(start_fourth_vertical_line, end_fourth_vertical_line, color=(0, 200, 255), thickness=1, parent=tag_of_drawlist)
-dpg.create_viewport(title='Visualization', width=1920, height=1080)
+dpg.create_viewport(title='Visualization of LSH structures', width=1920, height=1080)
 dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.start_dearpygui()
-# # below replaces, start_dearpygui()
-# while dpg.is_dearpygui_running():
-#     # insert here any code you would like to run in the render loop
-#     # you can manually stop by using stop_dearpygui()
-#     print("this will run every frame")
-#
-#
-#
-#     dpg.render_dearpygui_frame()
-
 dpg.destroy_context()
-
-a = True
-b = False
-c = a is b
