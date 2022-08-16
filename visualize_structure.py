@@ -83,13 +83,13 @@ with dpg.window(label="Parameter value selector", tag='Primary Window', height=1
         with dpg.tab(tag='amplified_tab', label="Amplified"):
             dpg.add_radio_button(items=['Amplified', 'Not amplified'], label='amplified', tag='amplified', callback=update_plot)
 
-    with dpg.plot(label="Line Series", height=550, width=550):
+    with dpg.plot(label=f"s-curve", height=550, width=550):
         # optionally create legend
         dpg.add_plot_legend()
 
         # REQUIRED: create x and y axes
-        dpg.add_plot_axis(dpg.mvXAxis, label="x")
-        dpg.add_plot_axis(dpg.mvYAxis, label="y", tag="y_axis")
+        dpg.add_plot_axis(dpg.mvXAxis, label="Pr[candidate pair|s(p,p')]")
+        dpg.add_plot_axis(dpg.mvYAxis, label="s(p,p')", tag="y_axis")
 
         # series belong to a y axis
         dpg.add_line_series(x_array, y_array, label=f"b_1={b[0]}, b_2={b[1]}, r_1={r[0]}, r_2={r[1]}", parent="y_axis", tag="s_curve")
