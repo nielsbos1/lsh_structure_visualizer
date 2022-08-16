@@ -12,6 +12,8 @@ With this module, users can generate a visualization of optimal LSH  structure. 
 - The threshold value
 - A boolean variable 'amplified' that indicates whether two stages are allowed in the LSH structure
 
+We have placed an executionable file (for windows-based systems) in the output folder. With this file you should be able to run the application instantly. Below there are instructions on how to run the underlying python script or how to generate your own executable.
+
 ## Set-up
 
 In order for a smooth running experience, we advise you to use a virtual environment, which can be create with the following command in the terminal.
